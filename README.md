@@ -2,6 +2,8 @@
 
 A native macOS menu bar application that displays your monthly billable hours from Harvest Time Reports API directly in the menu bar.
 
+> **Disclaimer**: This application uses the Harvest API but is in no way affiliated with, endorsed by, or supported by Harvest. It is an independent third-party application developed for personal use.
+
 ## Features
 
 - 🏗️ Native macOS menu bar integration
