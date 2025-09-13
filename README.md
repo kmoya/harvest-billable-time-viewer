@@ -6,7 +6,7 @@ A native macOS menu bar application that displays your monthly billable hours fr
 
 - 🏗️ Native macOS menu bar integration
 - 📅 Displays current month's total billable hours in the menu bar
-- 🔄 Updates on-demand when you click the menu bar icon
+- 🔄 Manual refresh available through the menu
 - ⚙️ Simple configuration dialog for API credentials
 - 🔐 Secure storage of API credentials in UserDefaults
 - 📊 Shows last update timestamp and current month indicator
@@ -48,9 +48,9 @@ A native macOS menu bar application that displays your monthly billable hours fr
 
 ## Usage
 
-- **Click the menu bar icon**: Refreshes your monthly billable hours data
+- **Click the menu bar icon**: Opens the dropdown menu
 - **Menu options**:
-  - **Refresh**: Manually refresh the data
+  - **Refresh**: Manually refresh the monthly billable hours data
   - **Settings...**: Update your API credentials
   - **Showing: [Month Year]**: Displays which month's data is being shown
   - **Last updated**: Shows when data was last fetched
