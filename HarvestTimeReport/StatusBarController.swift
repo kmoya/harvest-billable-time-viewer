@@ -36,7 +36,7 @@ enum AutoRefreshInterval: Int, CaseIterable {
     }
 }
 
-class StatusBarController: NSObject {
+class StatusBarController: NSObject, NSMenuDelegate {
     
     private var statusItem: NSStatusItem!
     private var harvestAPI: HarvestAPI!
@@ -44,6 +44,7 @@ class StatusBarController: NSObject {
     private var selectedTimePeriod: TimePeriod = .month
     private var autoRefreshInterval: AutoRefreshInterval = .off
     private var autoRefreshTimer: Timer?
+    private var clearCredentialsMenuItem: NSMenuItem?
     
     override init() {
         super.init()
@@ -99,9 +100,10 @@ class StatusBarController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
         
-        let clearSettingsItem = NSMenuItem(title: "Clear API Credentials", action: #selector(clearSettings), keyEquivalent: "")
-        clearSettingsItem.target = self
-        menu.addItem(clearSettingsItem)
+        clearCredentialsMenuItem = NSMenuItem(title: "Clear API Credentials", action: #selector(clearSettings), keyEquivalent: "")
+        clearCredentialsMenuItem?.target = self
+        clearCredentialsMenuItem?.isEnabled = harvestAPI.hasValidCredentials()
+        menu.addItem(clearCredentialsMenuItem!)
         
         menu.addItem(NSMenuItem.separator())
         
@@ -165,6 +167,7 @@ class StatusBarController: NSObject {
         quitItem.target = self
         menu.addItem(quitItem)
         
+        menu.delegate = self
         statusItem.menu = menu
     }
     
@@ -304,7 +307,8 @@ class StatusBarController: NSObject {
         let userAgentLabel = NSTextField(labelWithString: "User Agent:")
         userAgentLabel.frame = NSRect(x: 0, y: 30, width: 80, height: 20)
         let userAgentField = NSTextField(frame: NSRect(x: 85, y: 30, width: 200, height: 20))
-        userAgentField.stringValue = UserDefaults.standard.string(forKey: "HarvestUserAgent") ?? "HarvestTimeReport (your-email@example.com)"
+        userAgentField.stringValue = UserDefaults.standard.string(forKey: "HarvestUserAgent") ?? ""
+        userAgentField.placeholderString = "HarvestTimeReport (your-email@example.com)"
         
         // Info text
         let infoLabel = NSTextField(labelWithString: "User Agent should include your app name and contact email")
@@ -362,6 +366,9 @@ class StatusBarController: NSObject {
             // Update status bar to show config is needed
             updateStatusBarTitle("⏱ Config needed")
             
+            // Update the Clear API Credentials button state
+            updateClearCredentialsMenuState()
+            
             // Show confirmation
             let confirmAlert = NSAlert()
             confirmAlert.messageText = "Credentials Cleared"
@@ -400,6 +407,38 @@ class StatusBarController: NSObject {
             // Open GitHub repository in default browser
             if let url = URL(string: "https://github.com/kmoya/harvest-billable-time-viewer?tab=readme-ov-file#readme") {
                 NSWorkspace.shared.open(url)
+            }
+        }
+    }
+    
+    private func updateClearCredentialsMenuState() {
+        let hasCredentials = harvestAPI.hasValidCredentials()
+        clearCredentialsMenuItem?.isEnabled = hasCredentials
+    }
+    
+    // MARK: - NSMenuDelegate
+    
+    func menuWillOpen(_ menu: NSMenu) {
+        // Update the Clear API Credentials menu item visibility based on credentials
+        let hasCredentials = harvestAPI.hasValidCredentials()
+        
+        // Remove the old menu item if it exists
+        if let oldItem = clearCredentialsMenuItem, let index = menu.items.firstIndex(of: oldItem) {
+            menu.removeItem(at: index)
+            
+            // Only add the menu item back if there are credentials to clear
+            if hasCredentials {
+                let newItem = NSMenuItem(title: "Clear API Credentials", 
+                                       action: #selector(clearSettings), 
+                                       keyEquivalent: "")
+                newItem.target = self
+                newItem.isEnabled = true  // Always enabled when visible
+                
+                // Insert at the same position
+                menu.insertItem(newItem, at: index)
+                clearCredentialsMenuItem = newItem
+            } else {
+                clearCredentialsMenuItem = nil
             }
         }
     }

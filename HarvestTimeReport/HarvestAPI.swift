@@ -64,7 +64,10 @@ class HarvestAPI {
     }
     
     func hasValidCredentials() -> Bool {
-        return accountID?.isEmpty == false && apiToken?.isEmpty == false && userAgent?.isEmpty == false
+        let hasAccount = accountID?.isEmpty == false
+        let hasToken = apiToken?.isEmpty == false  
+        let hasAgent = userAgent?.isEmpty == false
+        return hasAccount && hasToken && hasAgent
     }
     
     func fetchBillableHours(for period: TimePeriod = .month, completion: @escaping (Result<Double, Error>) -> Void) {
