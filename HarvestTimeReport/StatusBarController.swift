@@ -32,9 +32,11 @@ class StatusBarController: NSObject {
         // Set up the menu
         setupMenu()
         
-        // Load initial data if credentials are available
+        // Load initial data if credentials are available, otherwise show config needed
         if harvestAPI.hasValidCredentials() {
             refreshBillableHours()
+        } else {
+            updateStatusBarTitle("⏱ Config needed")
         }
     }
     
