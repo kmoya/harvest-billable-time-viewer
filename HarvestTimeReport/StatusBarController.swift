@@ -294,7 +294,7 @@ class StatusBarController: NSObject {
         let alert = NSAlert()
         alert.messageText = "Harvest Time Report"
         alert.informativeText = """
-        A macOS menu bar app that displays your monthly billable hours from Harvest.
+        A macOS menu bar app that displays your billable hours from Harvest with flexible time period tracking (Day, Week, Month).
         
         Version: 1.0
         Licensed under the MIT License
