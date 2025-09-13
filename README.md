@@ -1,16 +1,17 @@
 # Harvest Time Report - macOS Menu Bar App
 
-A native macOS menu bar application that displays your daily billable hours from Harvest Time Reports API directly in the menu bar.
+A native macOS menu bar application that displays your monthly billable hours from Harvest Time Reports API directly in the menu bar.
 
 ## Features
 
 - 🏗️ Native macOS menu bar integration
-- ⏱️ Displays today's billable hours in the menu bar
+- 📅 Displays current month's total billable hours in the menu bar
 - 🔄 Updates on-demand when you click the menu bar icon
 - ⚙️ Simple configuration dialog for API credentials
 - 🔐 Secure storage of API credentials in UserDefaults
-- 📊 Shows last update timestamp
-- 🚫 Runs as a background app (no dock icon)
+- 📊 Shows last update timestamp and current month indicator
+- 🚫 Runs as a background app (no dock icon or desktop windows)
+- 🗓️ Automatically switches to new month when calendar month changes
 
 ## Prerequisites
 
@@ -47,10 +48,11 @@ A native macOS menu bar application that displays your daily billable hours from
 
 ## Usage
 
-- **Click the menu bar icon**: Refreshes your billable hours data
+- **Click the menu bar icon**: Refreshes your monthly billable hours data
 - **Menu options**:
   - **Refresh**: Manually refresh the data
   - **Settings...**: Update your API credentials
+  - **Showing: [Month Year]**: Displays which month's data is being shown
   - **Last updated**: Shows when data was last fetched
   - **Quit**: Exit the application
 
@@ -58,10 +60,10 @@ A native macOS menu bar application that displays your daily billable hours from
 
 The app calls the Harvest Time Reports API endpoint:
 ```
-GET https://api.harvestapp.com/v2/reports/time/projects?from=YYYY-MM-DD&to=YYYY-MM-DD
+GET https://api.harvestapp.com/v2/reports/time/projects?from=YYYY-MM-01&to=YYYY-MM-31
 ```
 
-It retrieves today's time entries, sums up all the `billable_hours` values from the `results` array, and displays the total in the menu bar with a timer icon (⏱️).
+It retrieves the current month's time entries, sums up all the `billable_hours` values from the `results` array, and displays the monthly total in the menu bar with a timer icon (⏱️). The date range automatically covers the entire current month (e.g., September 1st through September 30th).
 
 ## API Response Format
 
@@ -84,7 +86,7 @@ The app expects this JSON structure from the Harvest API:
 }
 ```
 
-The app sums all `billable_hours` values to show your total for the day.
+The app sums all `billable_hours` values to show your total for the current month.
 
 ## Security
 
@@ -109,13 +111,23 @@ The app sums all `billable_hours` values to show your total for the day.
 - **403**: API access denied (check permissions)
 - **429**: Rate limit exceeded (wait and try again)
 
+## Monthly Tracking
+
+The app automatically tracks your billable hours for the current calendar month:
+
+- **September 2025**: Shows total hours from September 1-30, 2025
+- **October 2025**: Automatically switches to October 1-31, 2025 when the month changes
+- **Historical data**: Only shows current month data (not past months)
+
+This gives you a running total of your monthly progress toward billing goals.
+
 ## Development
 
 The app consists of three main Swift files:
 
-- **AppDelegate.swift**: Main application entry point
-- **StatusBarController.swift**: Manages the menu bar interface and user interactions
-- **HarvestAPI.swift**: Handles all API communication with Harvest
+- **AppDelegate.swift**: Main application entry point, handles window management
+- **StatusBarController.swift**: Manages the menu bar interface, monthly display, and user interactions
+- **HarvestAPI.swift**: Handles all API communication with Harvest, calculates month date ranges
 
 ## Building for Distribution
 
