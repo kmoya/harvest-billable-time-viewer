@@ -98,7 +98,7 @@ class StatusBarController: NSObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let hours):
-                    self?.updateStatusBarTitle("⏱ \(String(format: "%.1f", hours))h")
+                    self?.updateStatusBarTitle("⏱ \(String(format: "%.2f", hours))h")
                     self?.lastUpdateTime = Date()
                     self?.setupMenu() // Refresh menu to show updated timestamp
                 case .failure(let error):
