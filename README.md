@@ -26,7 +26,7 @@ A native macOS menu bar application that displays your monthly billable hours fr
 ### 1. Get your Harvest API credentials
 
 1. Log in to your Harvest account
-2. Go to Settings → Integrations → Personal Access Tokens
+2. Go to https://id.getharvest.com/developers
 3. Create a new personal access token
 4. Note down:
    - Your **Account ID** (found in the URL or account settings)
@@ -35,7 +35,7 @@ A native macOS menu bar application that displays your monthly billable hours fr
 ### 2. Build the app
 
 1. Open `HarvestTimeReport.xcodeproj` in Xcode
-2. Select your development team in the project settings (if you want to run it)
+2. (Optional) Select your development team in the project settings - only needed if you want to distribute the app or if Xcode requires code signing
 3. Build and run the project (⌘+R)
 
 ### 3. Configure the app
