@@ -14,12 +14,36 @@ enum TimePeriod: String, CaseIterable {
     case month = "Month"
 }
 
+enum AutoRefreshInterval: Int, CaseIterable {
+    case off = 0
+    case oneMinute = 60
+    case fiveMinutes = 300
+    case tenMinutes = 600
+    case fifteenMinutes = 900
+    case thirtyMinutes = 1800
+    case oneHour = 3600
+    
+    var displayName: String {
+        switch self {
+        case .off: return "Off"
+        case .oneMinute: return "1 minute"
+        case .fiveMinutes: return "5 minutes"
+        case .tenMinutes: return "10 minutes"
+        case .fifteenMinutes: return "15 minutes"
+        case .thirtyMinutes: return "30 minutes"
+        case .oneHour: return "1 hour"
+        }
+    }
+}
+
 class StatusBarController: NSObject {
     
     private var statusItem: NSStatusItem!
     private var harvestAPI: HarvestAPI!
     private var lastUpdateTime: Date?
     private var selectedTimePeriod: TimePeriod = .month
+    private var autoRefreshInterval: AutoRefreshInterval = .off
+    private var autoRefreshTimer: Timer?
     
     override init() {
         super.init()
@@ -39,6 +63,12 @@ class StatusBarController: NSObject {
             selectedTimePeriod = period
         }
         
+        // Load saved auto-refresh preference
+        let savedRefreshInterval = UserDefaults.standard.integer(forKey: "AutoRefreshInterval")
+        if let interval = AutoRefreshInterval(rawValue: savedRefreshInterval) {
+            autoRefreshInterval = interval
+        }
+        
         // Initialize Harvest API
         harvestAPI = HarvestAPI()
         
@@ -51,6 +81,9 @@ class StatusBarController: NSObject {
         } else {
             updateStatusBarTitle("⏱ Config needed")
         }
+        
+        // Set up auto-refresh timer
+        setupAutoRefreshTimer()
     }
     
     private func setupMenu() {
@@ -66,7 +99,7 @@ class StatusBarController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
         
-        let clearSettingsItem = NSMenuItem(title: "Clear Settings", action: #selector(clearSettings), keyEquivalent: "")
+        let clearSettingsItem = NSMenuItem(title: "Clear API Credentials", action: #selector(clearSettings), keyEquivalent: "")
         clearSettingsItem.target = self
         menu.addItem(clearSettingsItem)
         
@@ -86,6 +119,23 @@ class StatusBarController: NSObject {
         
         timePeriodItem.submenu = timePeriodSubmenu
         menu.addItem(timePeriodItem)
+        
+        // Add auto-refresh interval submenu
+        let autoRefreshItem = NSMenuItem(title: "Auto-Refresh", action: nil, keyEquivalent: "")
+        let autoRefreshSubmenu = NSMenu(title: "Auto-Refresh")
+        
+        for interval in AutoRefreshInterval.allCases {
+            let intervalItem = NSMenuItem(title: interval.displayName, action: #selector(selectAutoRefreshInterval(_:)), keyEquivalent: "")
+            intervalItem.target = self
+            intervalItem.representedObject = interval
+            intervalItem.state = (interval == autoRefreshInterval) ? .on : .off
+            autoRefreshSubmenu.addItem(intervalItem)
+        }
+        
+        autoRefreshItem.submenu = autoRefreshSubmenu
+        menu.addItem(autoRefreshItem)
+        
+        menu.addItem(NSMenuItem.separator())
         
         // Add current period indicator
         let periodDescription = getCurrentPeriodDescription()
@@ -157,6 +207,21 @@ class StatusBarController: NSObject {
         }
     }
     
+    @objc private func selectAutoRefreshInterval(_ sender: NSMenuItem) {
+        guard let interval = sender.representedObject as? AutoRefreshInterval else { return }
+        
+        autoRefreshInterval = interval
+        
+        // Save the selected auto-refresh interval
+        UserDefaults.standard.set(interval.rawValue, forKey: "AutoRefreshInterval")
+        
+        // Update the timer
+        setupAutoRefreshTimer()
+        
+        // Refresh the menu to update checkmarks
+        setupMenu()
+    }
+    
     @objc private func statusBarButtonClicked() {
         // When clicked, refresh the data
         refreshBillableHours()
@@ -197,6 +262,23 @@ class StatusBarController: NSObject {
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         alert.runModal()
+    }
+    
+    private func setupAutoRefreshTimer() {
+        // Invalidate any existing timer
+        autoRefreshTimer?.invalidate()
+        autoRefreshTimer = nil
+        
+        // Set up new timer if interval is not off
+        if autoRefreshInterval != .off {
+            autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(autoRefreshInterval.rawValue), repeats: true) { [weak self] _ in
+                self?.refreshBillableHours()
+            }
+        }
+    }
+    
+    @objc private func autoRefreshTimerFired() {
+        refreshBillableHours()
     }
     
     @objc private func openSettings() {
@@ -260,10 +342,10 @@ class StatusBarController: NSObject {
     
     @objc private func clearSettings() {
         let alert = NSAlert()
-        alert.messageText = "Clear All Settings"
-        alert.informativeText = "This will remove all stored Harvest API credentials (Account ID, API Token, and User Agent). You will need to reconfigure the app to use it again."
+        alert.messageText = "Clear API Credentials"
+        alert.informativeText = "This will remove all stored Harvest API credentials (Account ID, API Token, and User Agent). Your preferences for time period and auto-refresh will be preserved. You will need to reconfigure the API credentials to use the app again."
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Clear Settings")
+        alert.addButton(withTitle: "Clear Credentials")
         alert.addButton(withTitle: "Cancel")
         
         let response = alert.runModal()
@@ -282,7 +364,7 @@ class StatusBarController: NSObject {
             
             // Show confirmation
             let confirmAlert = NSAlert()
-            confirmAlert.messageText = "Settings Cleared"
+            confirmAlert.messageText = "Credentials Cleared"
             confirmAlert.informativeText = "All Harvest API credentials have been removed. Use Settings to reconfigure the app."
             confirmAlert.alertStyle = .informational
             confirmAlert.addButton(withTitle: "OK")
@@ -320,6 +402,10 @@ class StatusBarController: NSObject {
                 NSWorkspace.shared.open(url)
             }
         }
+    }
+    
+    deinit {
+        autoRefreshTimer?.invalidate()
     }
     
     @objc private func quit() {
