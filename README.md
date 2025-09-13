@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="HarvestTimeReport/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" alt="Harvest Time Report App Icon" width="128" height="128">
+</div>
+
 # Harvest Time Report - macOS Menu Bar App
 
 A native macOS menu bar application that displays your billable hours from Harvest Time Reports API directly in the menu bar. Choose between daily, weekly, or monthly views to track your time at the granularity you prefer.
