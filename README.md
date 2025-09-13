@@ -13,13 +13,14 @@ A native macOS menu bar application that displays your billable hours from Harve
 - 🏗️ Native macOS menu bar integration
 - 📅 **Flexible time periods**: View billable hours for the current day, week, or month
 - 🔄 Manual refresh available through the menu
+- ⏰ **Auto-refresh**: Automatically update at set intervals (1 min, 5 min, 10 min, 15 min, 30 min, 1 hour, or off)
 - ⚙️ Simple configuration dialog for API credentials
 - 🔐 Secure storage of API credentials in UserDefaults
 - 📊 Shows last update timestamp and current period indicator
 - 🚫 Runs as a background app (no dock icon or desktop windows)
 - 🗓️ Automatically updates when time periods change (new day/week/month)
-- 🧹 Clear settings option to reset all stored credentials
-- 💾 Remembers your preferred time period setting
+- 🧹 Clear API credentials option to reset stored credentials
+- 💾 Remembers your preferred time period and auto-refresh settings
 
 ## Prerequisites
 
@@ -60,11 +61,19 @@ A native macOS menu bar application that displays your billable hours from Harve
 - **Menu options**:
   - **Refresh**: Manually refresh the billable hours data for the selected time period
   - **Settings...**: Update your API credentials
-  - **Clear Settings**: Remove all stored credentials and reset the app
+  - **Clear API Credentials**: Remove all stored credentials (preserves time period and auto-refresh preferences)
   - **Time Period**: Choose between Day, Week, or Month views
     - **Day**: Shows today's billable hours
     - **Week**: Shows current week's billable hours
     - **Month**: Shows current month's billable hours
+  - **Auto-Refresh**: Set automatic refresh intervals
+    - **Off**: Manual refresh only (default)
+    - **1 minute**: Refresh every minute (minimum interval)
+    - **5 minutes**: Refresh every 5 minutes
+    - **10 minutes**: Refresh every 10 minutes
+    - **15 minutes**: Refresh every 15 minutes
+    - **30 minutes**: Refresh every 30 minutes
+    - **1 hour**: Refresh every hour
   - **Showing: [Period Description]**: Displays which time period's data is being shown
   - **Last updated**: Shows when data was last fetched
   - **About Time Report**: Information about the app with link to GitHub
@@ -84,6 +93,9 @@ GET https://api.harvestapp.com/v2/reports/time/projects?from=YYYY-MM-DD&to=YYYY-
 - **Month**: `from=2025-09-01&to=2025-09-30` (current month)
 
 It retrieves time entries for the selected period, sums up all the `billable_hours` values from the `results` array, and displays the total in the menu bar with a timer icon (⏱️). The date ranges automatically adjust based on the current date and your selected time period.
+
+**Auto-Refresh & API Rate Limits:**
+The app respects Harvest's API rate limits by enforcing a minimum refresh interval of 1 minute. When auto-refresh is enabled, the app will automatically call the API at your selected interval. The auto-refresh setting is persistent and will resume when you restart the app.
 
 ## API Response Format
 
@@ -159,8 +171,13 @@ This gives you flexible tracking granularity - whether you prefer detailed daily
 The app consists of three main Swift files:
 
 - **AppDelegate.swift**: Main application entry point, handles window management
-- **StatusBarController.swift**: Manages the menu bar interface, time period selection, user interactions, and settings management
+- **StatusBarController.swift**: Manages the menu bar interface, time period selection, auto-refresh timers, user interactions, and settings management
 - **HarvestAPI.swift**: Handles all API communication with Harvest, calculates date ranges for different time periods (day/week/month)
+
+**Key Features:**
+- **Timer Management**: Auto-refresh functionality using NSTimer with proper cleanup
+- **Settings Persistence**: User preferences stored in UserDefaults (time period, auto-refresh interval)
+- **API Rate Limit Compliance**: Minimum 1-minute refresh intervals to respect Harvest's API limits
 
 ## Building for Distribution
 
