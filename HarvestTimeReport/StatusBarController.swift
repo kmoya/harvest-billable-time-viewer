@@ -51,6 +51,10 @@ class StatusBarController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
         
+        let clearSettingsItem = NSMenuItem(title: "Clear Settings", action: #selector(clearSettings), keyEquivalent: "")
+        clearSettingsItem.target = self
+        menu.addItem(clearSettingsItem)
+        
         menu.addItem(NSMenuItem.separator())
         
         // Add current month indicator
@@ -184,6 +188,38 @@ class StatusBarController: NSObject {
             
             // Refresh data with new credentials
             refreshBillableHours()
+        }
+    }
+    
+    @objc private func clearSettings() {
+        let alert = NSAlert()
+        alert.messageText = "Clear All Settings"
+        alert.informativeText = "This will remove all stored Harvest API credentials (Account ID, API Token, and User Agent). You will need to reconfigure the app to use it again."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Clear Settings")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            // Remove all stored credentials
+            UserDefaults.standard.removeObject(forKey: "HarvestAccountID")
+            UserDefaults.standard.removeObject(forKey: "HarvestAPIToken")
+            UserDefaults.standard.removeObject(forKey: "HarvestUserAgent")
+            
+            // Update the API to reflect cleared credentials
+            harvestAPI.updateCredentials()
+            
+            // Update status bar to show config is needed
+            updateStatusBarTitle("⏱ Config needed")
+            
+            // Show confirmation
+            let confirmAlert = NSAlert()
+            confirmAlert.messageText = "Settings Cleared"
+            confirmAlert.informativeText = "All Harvest API credentials have been removed. Use Settings to reconfigure the app."
+            confirmAlert.alertStyle = .informational
+            confirmAlert.addButton(withTitle: "OK")
+            confirmAlert.runModal()
         }
     }
     
