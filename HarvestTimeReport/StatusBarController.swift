@@ -328,20 +328,46 @@ class StatusBarController: NSObject, NSMenuDelegate {
         alert.addButton(withTitle: "Save")
         alert.addButton(withTitle: "Cancel")
         
-        let response = alert.runModal()
-        
-        if response == .alertFirstButtonReturn {
-            // Save the credentials
-            UserDefaults.standard.set(accountField.stringValue, forKey: "HarvestAccountID")
-            UserDefaults.standard.set(tokenField.stringValue, forKey: "HarvestAPIToken")
-            UserDefaults.standard.set(userAgentField.stringValue, forKey: "HarvestUserAgent")
+        // Loop until all fields are filled or user cancels
+        repeat {
+            let response = alert.runModal()
             
-            // Update the API with new credentials
-            harvestAPI.updateCredentials()
-            
-            // Refresh data with new credentials
-            refreshBillableHours()
-        }
+            if response == .alertFirstButtonReturn {
+                // Validate that all fields are filled
+                let accountID = accountField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let apiToken = tokenField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let userAgent = userAgentField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if accountID.isEmpty || apiToken.isEmpty || userAgent.isEmpty {
+                    // Show validation error
+                    let errorAlert = NSAlert()
+                    errorAlert.messageText = "Incomplete Credentials"
+                    errorAlert.informativeText = "All three fields are required: Account ID, API Token, and User Agent. Please fill in all fields before saving."
+                    errorAlert.alertStyle = .warning
+                    errorAlert.addButton(withTitle: "OK")
+                    errorAlert.runModal()
+                    // Continue the loop to show the settings dialog again
+                    continue
+                }
+                
+                // All fields are valid, save the credentials
+                UserDefaults.standard.set(accountID, forKey: "HarvestAccountID")
+                UserDefaults.standard.set(apiToken, forKey: "HarvestAPIToken")
+                UserDefaults.standard.set(userAgent, forKey: "HarvestUserAgent")
+                
+                // Update the API with new credentials
+                harvestAPI.updateCredentials()
+                
+                // Refresh data with new credentials
+                refreshBillableHours()
+                
+                // Break out of the loop
+                break
+            } else {
+                // User clicked Cancel, break out of the loop
+                break
+            }
+        } while true
     }
     
     @objc private func clearSettings() {
