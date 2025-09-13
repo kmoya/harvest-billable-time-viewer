@@ -1,0 +1,179 @@
+import Cocoa
+
+class StatusBarController: NSObject {
+    
+    private var statusItem: NSStatusItem!
+    private var harvestAPI: HarvestAPI!
+    private var lastUpdateTime: Date?
+    
+    override init() {
+        super.init()
+        
+        // Create status bar item
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        
+        if let button = statusItem.button {
+            button.title = "⏱ --"
+            button.action = #selector(statusBarButtonClicked)
+            button.target = self
+        }
+        
+        // Initialize Harvest API
+        harvestAPI = HarvestAPI()
+        
+        // Set up the menu
+        setupMenu()
+        
+        // Load initial data if credentials are available
+        if harvestAPI.hasValidCredentials() {
+            refreshBillableHours()
+        }
+    }
+    
+    private func setupMenu() {
+        let menu = NSMenu()
+        
+        let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshBillableHours), keyEquivalent: "r")
+        refreshItem.target = self
+        menu.addItem(refreshItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // Add current month indicator
+        let monthFormatter = DateFormatter()
+        monthFormatter.dateFormat = "MMMM yyyy"
+        let currentMonth = monthFormatter.string(from: Date())
+        let monthItem = NSMenuItem(title: "Showing: \(currentMonth)", action: nil, keyEquivalent: "")
+        monthItem.isEnabled = false
+        menu.addItem(monthItem)
+        
+        if let lastUpdate = lastUpdateTime {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+            let updateItem = NSMenuItem(title: "Last updated: \(formatter.string(from: lastUpdate))", action: nil, keyEquivalent: "")
+            updateItem.isEnabled = false
+            menu.addItem(updateItem)
+            menu.addItem(NSMenuItem.separator())
+        } else {
+            menu.addItem(NSMenuItem.separator())
+        }
+        
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+        
+        statusItem.menu = menu
+    }
+    
+    @objc private func statusBarButtonClicked() {
+        // When clicked, refresh the data
+        refreshBillableHours()
+    }
+    
+    @objc private func refreshBillableHours() {
+        guard harvestAPI.hasValidCredentials() else {
+            updateStatusBarTitle("⏱ Config needed")
+            openSettings()
+            return
+        }
+        
+        updateStatusBarTitle("⏱ Loading...")
+        
+        harvestAPI.fetchBillableHours { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let hours):
+                    self?.updateStatusBarTitle("⏱ \(String(format: "%.1f", hours))h")
+                    self?.lastUpdateTime = Date()
+                    self?.setupMenu() // Refresh menu to show updated timestamp
+                case .failure(let error):
+                    self?.updateStatusBarTitle("⏱ Error")
+                    self?.showError(error)
+                }
+            }
+        }
+    }
+    
+    private func updateStatusBarTitle(_ title: String) {
+        statusItem.button?.title = title
+    }
+    
+    private func showError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Failed to fetch Harvest data"
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+    
+    @objc private func openSettings() {
+        let alert = NSAlert()
+        alert.messageText = "Harvest API Configuration"
+        alert.informativeText = "Enter your Harvest API credentials. You can find these in your Harvest account under Settings > Integrations > Personal Access Tokens."
+        
+        let accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 120))
+        
+        // Account ID field
+        let accountLabel = NSTextField(labelWithString: "Account ID:")
+        accountLabel.frame = NSRect(x: 0, y: 90, width: 80, height: 20)
+        let accountField = NSTextField(frame: NSRect(x: 85, y: 90, width: 200, height: 20))
+        accountField.stringValue = UserDefaults.standard.string(forKey: "HarvestAccountID") ?? ""
+        
+        // Token field
+        let tokenLabel = NSTextField(labelWithString: "API Token:")
+        tokenLabel.frame = NSRect(x: 0, y: 60, width: 80, height: 20)
+        let tokenField = NSSecureTextField(frame: NSRect(x: 85, y: 60, width: 200, height: 20))
+        tokenField.stringValue = UserDefaults.standard.string(forKey: "HarvestAPIToken") ?? ""
+        
+        // User Agent field
+        let userAgentLabel = NSTextField(labelWithString: "User Agent:")
+        userAgentLabel.frame = NSRect(x: 0, y: 30, width: 80, height: 20)
+        let userAgentField = NSTextField(frame: NSRect(x: 85, y: 30, width: 200, height: 20))
+        userAgentField.stringValue = UserDefaults.standard.string(forKey: "HarvestUserAgent") ?? "HarvestTimeReport (your-email@example.com)"
+        
+        // Info text
+        let infoLabel = NSTextField(labelWithString: "User Agent should include your app name and contact email")
+        infoLabel.frame = NSRect(x: 0, y: 5, width: 300, height: 20)
+        infoLabel.font = NSFont.systemFont(ofSize: 10)
+        infoLabel.textColor = .secondaryLabelColor
+        
+        accessoryView.addSubview(accountLabel)
+        accessoryView.addSubview(accountField)
+        accessoryView.addSubview(tokenLabel)
+        accessoryView.addSubview(tokenField)
+        accessoryView.addSubview(userAgentLabel)
+        accessoryView.addSubview(userAgentField)
+        accessoryView.addSubview(infoLabel)
+        
+        alert.accessoryView = accessoryView
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            // Save the credentials
+            UserDefaults.standard.set(accountField.stringValue, forKey: "HarvestAccountID")
+            UserDefaults.standard.set(tokenField.stringValue, forKey: "HarvestAPIToken")
+            UserDefaults.standard.set(userAgentField.stringValue, forKey: "HarvestUserAgent")
+            
+            // Update the API with new credentials
+            harvestAPI.updateCredentials()
+            
+            // Refresh data with new credentials
+            refreshBillableHours()
+        }
+    }
+    
+    @objc private func quit() {
+        NSApplication.shared.terminate(nil)
+    }
+}
