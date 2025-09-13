@@ -200,6 +200,12 @@ class StatusBarController: NSObject {
         """
         
         alert.alertStyle = .informational
+        
+        // Set the app icon for the about dialog
+        if let appIcon = NSApp.applicationIconImage {
+            alert.icon = appIcon
+        }
+        
         alert.addButton(withTitle: "Visit GitHub")
         alert.addButton(withTitle: "OK")
         
