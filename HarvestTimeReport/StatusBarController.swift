@@ -73,6 +73,12 @@ class StatusBarController: NSObject {
             menu.addItem(NSMenuItem.separator())
         }
         
+        let aboutItem = NSMenuItem(title: "About Time Report", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -178,6 +184,32 @@ class StatusBarController: NSObject {
             
             // Refresh data with new credentials
             refreshBillableHours()
+        }
+    }
+    
+    @objc private func showAbout() {
+        let alert = NSAlert()
+        alert.messageText = "Harvest Time Report"
+        alert.informativeText = """
+        A macOS menu bar app that displays your monthly billable hours from Harvest.
+        
+        Version: 1.0
+        Licensed under the MIT License
+        
+        For more information, documentation, and source code:
+        """
+        
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Visit GitHub")
+        alert.addButton(withTitle: "OK")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            // Open GitHub repository in default browser
+            if let url = URL(string: "https://github.com/kmoya/harvest-billable-time-viewer?tab=readme-ov-file#readme") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     
