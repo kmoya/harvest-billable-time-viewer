@@ -138,7 +138,7 @@ The app consists of three main Swift files:
 
 ## License
 
-This project is provided as-is for personal use. Modify as needed for your requirements.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 

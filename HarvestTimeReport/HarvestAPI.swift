@@ -1,3 +1,11 @@
+//
+//  HarvestAPI.swift
+//  HarvestTimeReport
+//
+//  Created by Kent Moya on 9/13/25.
+//  Licensed under the MIT License
+//
+
 import Foundation
 
 class HarvestAPI {
