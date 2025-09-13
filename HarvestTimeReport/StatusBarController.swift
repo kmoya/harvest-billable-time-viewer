@@ -8,11 +8,18 @@
 
 import Cocoa
 
+enum TimePeriod: String, CaseIterable {
+    case day = "Day"
+    case week = "Week"
+    case month = "Month"
+}
+
 class StatusBarController: NSObject {
     
     private var statusItem: NSStatusItem!
     private var harvestAPI: HarvestAPI!
     private var lastUpdateTime: Date?
+    private var selectedTimePeriod: TimePeriod = .month
     
     override init() {
         super.init()
@@ -24,6 +31,12 @@ class StatusBarController: NSObject {
             button.title = "⏱ --"
             button.action = #selector(statusBarButtonClicked)
             button.target = self
+        }
+        
+        // Load saved time period preference
+        if let savedPeriod = UserDefaults.standard.string(forKey: "SelectedTimePeriod"),
+           let period = TimePeriod(rawValue: savedPeriod) {
+            selectedTimePeriod = period
         }
         
         // Initialize Harvest API
@@ -59,13 +72,26 @@ class StatusBarController: NSObject {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Add current month indicator
-        let monthFormatter = DateFormatter()
-        monthFormatter.dateFormat = "MMMM yyyy"
-        let currentMonth = monthFormatter.string(from: Date())
-        let monthItem = NSMenuItem(title: "Showing: \(currentMonth)", action: nil, keyEquivalent: "")
-        monthItem.isEnabled = false
-        menu.addItem(monthItem)
+        // Add time period selection submenu
+        let timePeriodItem = NSMenuItem(title: "Time Period", action: nil, keyEquivalent: "")
+        let timePeriodSubmenu = NSMenu(title: "Time Period")
+        
+        for period in TimePeriod.allCases {
+            let periodItem = NSMenuItem(title: period.rawValue, action: #selector(selectTimePeriod(_:)), keyEquivalent: "")
+            periodItem.target = self
+            periodItem.representedObject = period
+            periodItem.state = (period == selectedTimePeriod) ? .on : .off
+            timePeriodSubmenu.addItem(periodItem)
+        }
+        
+        timePeriodItem.submenu = timePeriodSubmenu
+        menu.addItem(timePeriodItem)
+        
+        // Add current period indicator
+        let periodDescription = getCurrentPeriodDescription()
+        let periodItem = NSMenuItem(title: "Showing: \(periodDescription)", action: nil, keyEquivalent: "")
+        periodItem.isEnabled = false
+        menu.addItem(periodItem)
         
         if let lastUpdate = lastUpdateTime {
             let formatter = DateFormatter()
@@ -92,6 +118,45 @@ class StatusBarController: NSObject {
         statusItem.menu = menu
     }
     
+    private func getCurrentPeriodDescription() -> String {
+        let formatter = DateFormatter()
+        let now = Date()
+        
+        switch selectedTimePeriod {
+        case .day:
+            formatter.dateFormat = "MMMM d, yyyy"
+            return formatter.string(from: now)
+        case .week:
+            let calendar = Calendar.current
+            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            let endOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.end ?? now
+            formatter.dateFormat = "MMM d"
+            let startString = formatter.string(from: startOfWeek)
+            let endString = formatter.string(from: endOfWeek)
+            return "Week of \(startString) - \(endString)"
+        case .month:
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: now)
+        }
+    }
+    
+    @objc private func selectTimePeriod(_ sender: NSMenuItem) {
+        guard let period = sender.representedObject as? TimePeriod else { return }
+        
+        selectedTimePeriod = period
+        
+        // Save the selected time period
+        UserDefaults.standard.set(period.rawValue, forKey: "SelectedTimePeriod")
+        
+        // Refresh the menu to update checkmarks and period description
+        setupMenu()
+        
+        // Refresh data for the new time period
+        if harvestAPI.hasValidCredentials() {
+            refreshBillableHours()
+        }
+    }
+    
     @objc private func statusBarButtonClicked() {
         // When clicked, refresh the data
         refreshBillableHours()
@@ -106,7 +171,7 @@ class StatusBarController: NSObject {
         
         updateStatusBarTitle("⏱ Loading...")
         
-        harvestAPI.fetchBillableHours { [weak self] result in
+        harvestAPI.fetchBillableHours(for: selectedTimePeriod) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let hours):

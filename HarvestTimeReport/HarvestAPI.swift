@@ -67,6 +67,38 @@ class HarvestAPI {
         return accountID?.isEmpty == false && apiToken?.isEmpty == false && userAgent?.isEmpty == false
     }
     
+    func fetchBillableHours(for period: TimePeriod = .month, completion: @escaping (Result<Double, Error>) -> Void) {
+        guard let accountID = accountID, !accountID.isEmpty,
+              let apiToken = apiToken, !apiToken.isEmpty,
+              let userAgent = userAgent, !userAgent.isEmpty else {
+            completion(.failure(HarvestAPIError.missingCredentials))
+            return
+        }
+        
+        let (startDate, endDate) = getDateRange(for: period)
+        fetchBillableHours(from: startDate, to: endDate, completion: completion)
+    }
+    
+    private func getDateRange(for period: TimePeriod) -> (Date, Date) {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        switch period {
+        case .day:
+            let startOfDay = calendar.startOfDay(for: now)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? now
+            return (startOfDay, endOfDay)
+        case .week:
+            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            let endOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.end ?? now
+            return (startOfWeek, endOfWeek)
+        case .month:
+            let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
+            let endOfMonth = calendar.dateInterval(of: .month, for: now)?.end ?? now
+            return (startOfMonth, endOfMonth)
+        }
+    }
+    
     func fetchBillableHours(completion: @escaping (Result<Double, Error>) -> Void) {
         guard let accountID = accountID, !accountID.isEmpty,
               let apiToken = apiToken, !apiToken.isEmpty,
