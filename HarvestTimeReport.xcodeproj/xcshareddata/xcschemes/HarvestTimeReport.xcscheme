@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A1234567890123456789012L"
-               BuildableName = "HarvestTimeReport.app"
+               BuildableName = "Harvest Time Report.app"
                BlueprintName = "HarvestTimeReport"
                ReferencedContainer = "container:HarvestTimeReport.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1234567890123456789012L"
-            BuildableName = "HarvestTimeReport.app"
+            BuildableName = "Harvest Time Report.app"
             BlueprintName = "HarvestTimeReport"
             ReferencedContainer = "container:HarvestTimeReport.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1234567890123456789012L"
-            BuildableName = "HarvestTimeReport.app"
+            BuildableName = "Harvest Time Report.app"
             BlueprintName = "HarvestTimeReport"
             ReferencedContainer = "container:HarvestTimeReport.xcodeproj">
          </BuildableReference>
