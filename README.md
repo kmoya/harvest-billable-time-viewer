@@ -2,11 +2,21 @@
   <img src="HarvestTimeReport/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" alt="Harvest Time Report App Icon" width="128" height="128">
 </div>
 
+
 # Harvest Time Report - macOS Menu Bar App
 
 A native macOS menu bar application that displays your billable hours from Harvest Time Reports API directly in the menu bar. Choose between daily, weekly, or monthly views to track your time at the granularity you prefer.
 
+## About
+
+**Harvest Time Report** is a macOS application that utilizes the Harvest API to display your billable hours, rounded according to your Harvest settings, for the selected period (Day, Week or Month).  
+
+The motivation for this app comes from a limitation in the official Harvest Mac App, which only displays the _actual_ logged time and not the _rounded_ billable time. This viewer was created to solve that gap, making it easier for freelancers and teams to quickly see the hours that matter for billing and reporting.
+
 > **Disclaimer**: This application uses the Harvest API but is in no way affiliated with, endorsed by, or supported by Harvest. It is an independent third-party application developed for personal use.
+
+
+![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## Features
 
