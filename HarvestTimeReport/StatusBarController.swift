@@ -147,7 +147,7 @@ class StatusBarController: NSObject, NSMenuDelegate {
         
         if let lastUpdate = lastUpdateTime {
             let formatter = DateFormatter()
-            formatter.dateStyle = .none
+            formatter.dateStyle = .short
             formatter.timeStyle = .short
             let updateItem = NSMenuItem(title: "Last updated: \(formatter.string(from: lastUpdate))", action: nil, keyEquivalent: "")
             updateItem.isEnabled = false
